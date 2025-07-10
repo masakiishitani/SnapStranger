@@ -255,6 +255,7 @@
         <p class="subtitle">Street Photography: Strangers on Another Layer</p>
         <p class="subtitle">知らない他人を別のレイヤーに移動してもらうストリートフォトグラフィー</p>
         <p class="subtitle">制作者: <a href="https://x.com/masakiishitani" target="_blank" style="color: #007bff; text-decoration: none;">@masakiishitani</a></p>
+        <p class="subtitle" style="font-size: 0.9em; color: #666; margin-top: 10px;">💻 PC環境での利用を推奨します</p>
         
         <div class="concept-image">
             <img src="snapstranger-concept-monochrome.png" alt="SnapStranger Concept" style="max-width: 100%; height: auto; border-radius: 10px; margin: 20px 0;">
@@ -1024,10 +1025,10 @@
                 g = Math.floor(g / count);
                 b = Math.floor(b / count);
                 
-                // 周辺色60% + 黄色40%で混合
+                // 周辺色70% + 黄色30%で混合
                 const defaultYellow = { r: 255, g: 255, b: 0 };
-                const ambientRatio = 0.6; // 周辺色の比率
-                const yellowRatio = 0.4;  // 黄色の比率
+                const ambientRatio = 0.7; // 周辺色の比率
+                const yellowRatio = 0.3;  // 黄色の比率
                 
                 const finalR = Math.floor(r * ambientRatio + defaultYellow.r * yellowRatio);
                 const finalG = Math.floor(g * ambientRatio + defaultYellow.g * yellowRatio);
@@ -1037,7 +1038,7 @@
                 emoji.color = `rgb(${finalR}, ${finalG}, ${finalB})`;
                 this.redraw();
                 this.saveState();
-                alert(`顔文字の色を周辺色に合わせました (周辺色60% + 黄色40%: RGB ${finalR}, ${finalG}, ${finalB})`);
+                alert(`顔文字の色を周辺色に合わせました (周辺色70% + 黄色30%: RGB ${finalR}, ${finalG}, ${finalB})`);
             }
             
             saveState() {
