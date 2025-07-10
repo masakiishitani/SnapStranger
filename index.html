@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapStranger</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #999;
+        }
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        #canvas-container {
+            position: relative;
+            display: none;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #canvas {
+            border: 1px solid #ddd;
+            max-width: 100%;
+            cursor: crosshair;
+        }
+        .controls {
+            display: none;
+            margin-top: 20px;
+        }
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .mode-btn {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .mode-btn.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .brush-controls, .emoji-controls {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .emoji-controls {
+            display: none;
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .color-palette {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .color-btn {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .color-btn.active {
+            transform: scale(1.2);
+            border-color: #333;
+        }
+        .emoji-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .emoji-btn {
+            font-size: 30px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .emoji-btn.active {
+            border-color: #007bff;
+            background-color: #e7f3ff;
+        }
+        .layer-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .layer-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .layer-btn.active {
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .brush-preview {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            margin: 10px auto;
+            background-color: #000;
+        }
+        .emoji-handle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .resize-handle {
+            background-color: #28a745;
+            right: -4px;
+            bottom: -4px;
+            cursor: se-resize;
+        }
+        .rotate-handle {
+            background-color: #ffc107;
+            right: -4px;
+            top: -4px;
+            cursor: grab;
+        }
+        .delete-handle {
+            background-color: #dc3545;
+            left: -4px;
+            top: -4px;
+            cursor: pointer;
+        }
+        .delete-handle::after {
+            content: '×';
+            color: white;
+            font-size: 6px;
+            position: absolute;
+            top: -1px;
+            left: 1px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .mode-selector, .action-buttons, .layer-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            .color-palette, .emoji-selector {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SnapStranger</h1>
+        <p class="subtitle">Street Photography: Strangers on Another Layer</p>
+        <p class="subtitle">知らない他人を別のレイヤーに移動してもらうストリートフォトグラフィー</p>
+        <p class="subtitle">制作者: <a href="https://x.com/masakiishitani" target="_blank" style="color: #007bff; text-decoration: none;">@masakiishitani</a></p>
+        
+        <div class="concept-image">
+            <img src="snapstranger-concept-monochrome.png" alt="SnapStranger Concept" style="max-width: 100%; height: auto; border-radius: 10px; margin: 20px 0;">
+        </div>
+        
+        <div class="upload-area" id="uploadArea">
+            <p>画像をドラッグ&ドロップするか、クリックしてファイルを選択してください</p>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+        
+        <div id="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <div class="controls" id="controls">
+            <div class="mode-selector">
+                <button class="mode-btn active" id="brushMode">ブラシモード</button>
+                <button class="mode-btn" id="emojiMode">顔文字モード</button>
+            </div>
+            
+            <div class="layer-controls">
+                <button class="layer-btn active" id="brushLayerToggle">ブラシレイヤー表示</button>
+                <button class="layer-btn active" id="emojiLayerToggle">顔文字レイヤー表示</button>
+            </div>
+            
+            <div class="brush-controls" id="brushControls">
+                <div class="control-group">
+                    <label>ブラシサイズ: <span id="brushSizeValue">20</span>px</label>
+                    <input type="range" id="brushSize" min="1" max="100" value="20">
+                </div>
+                <div class="control-group">
+                    <label>不透明度: <span id="opacityValue">100</span>%</label>
+                    <input type="range" id="opacity" min="1" max="100" value="100">
+                </div>
+                <div class="control-group">
+                    <label>ノイズ追加: <span id="noiseValue">0</span>%</label>
+                    <input type="range" id="noise" min="0" max="100" value="0">
+                </div>
+                <div class="control-group">
+                    <label>エッジのぼかし: <span id="blurValue">0</span>px</label>
+                    <input type="range" id="blur" min="0" max="20" value="0">
+                </div>
+                <div class="control-group">
+                    <label>カラーパレット:</label>
+                    <div class="color-palette">
+                        <div class="color-btn active" style="background-color: #000000" data-color="#000000"></div>
+                        <div class="color-btn" style="background-color: #ffffff" data-color="#ffffff"></div>
+                        <div class="color-btn" style="background-color: #ff0000" data-color="#ff0000"></div>
+                        <div class="color-btn" style="background-color: #00ff00" data-color="#00ff00"></div>
+                        <div class="color-btn" style="background-color: #0000ff" data-color="#0000ff"></div>
+                        <div class="color-btn" style="background-color: #ffff00" data-color="#ffff00"></div>
+                        <div class="color-btn" style="background-color: #800080" data-color="#800080"></div>
+                        <div class="color-btn" style="background-color: #ffa500" data-color="#ffa500"></div>
+                        <div class="color-btn" style="background-color: #808080" data-color="#808080"></div>
+                    </div>
+                </div>
+                <div class="brush-preview" id="brushPreview"></div>
+            </div>
+            
+            <div class="emoji-controls" id="emojiControls">
+                <div class="control-group">
+                    <label>顔文字を選択:</label>
+                    <div class="emoji-selector">
+                        <button class="emoji-btn active" data-emoji="😊">
+                            <canvas width="30" height="30" style="border-radius: 50%;" data-type="smile"></canvas>
+                        </button>
+                        <button class="emoji-btn" data-emoji="😐">
+                            <canvas width="30" height="30" style="border-radius: 50%;" data-type="neutral"></canvas>
+                        </button>
+                        <button class="emoji-btn" data-emoji="😢">
+                            <canvas width="30" height="30" style="border-radius: 50%;" data-type="sad"></canvas>
+                        </button>
+                        <button class="emoji-btn" data-emoji="😮">
+                            <canvas width="30" height="30" style="border-radius: 50%;" data-type="surprised"></canvas>
+                        </button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>顔文字サイズ: <span id="emojiSizeValue">40</span>px</label>
+                    <input type="range" id="emojiSize" min="20" max="100" value="40">
+                </div>
+                <div class="control-group">
+                    <label>顔文字不透明度: <span id="emojiOpacityValue">100</span>%</label>
+                    <input type="range" id="emojiOpacity" min="10" max="100" value="100">
+                </div>
+                <button class="btn btn-secondary" id="adaptColorBtn">周辺色に合わせる</button>
+                <button class="btn btn-danger" id="deleteEmojiBtn">選択した顔文字を削除</button>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-secondary" id="undoBtn">取り消し (Ctrl+Z)</button>
+                <button class="btn btn-secondary" id="clearBrushBtn">ブラシクリア</button>
+                <button class="btn btn-secondary" id="clearEmojiBtn">顔文字クリア</button>
+                <button class="btn btn-danger" id="clearPhotoBtn">写真クリア</button>
+                <button class="btn btn-primary" id="downloadBtn">ダウンロード</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PhotoMaskingApp {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.ctx.imageSmoothingEnabled = false;
+                
+                this.brushCanvas = document.createElement('canvas');
+                this.brushCtx = this.brushCanvas.getContext('2d');
+                this.brushCtx.imageSmoothingEnabled = false;
+                
+                this.emojiCanvas = document.createElement('canvas');
+                this.emojiCtx = this.emojiCanvas.getContext('2d');
+                this.emojiCtx.imageSmoothingEnabled = false;
+                
+                this.originalImage = null;
+                this.isDrawing = false;
+                this.currentMode = 'brush';
+                this.selectedEmoji = '😊';
+                this.brushColor = '#000000';
+                this.brushSize = 20;
+                this.opacity = 100;
+                this.noise = 0;
+                this.blur = 0;
+                this.emojiSize = 40;
+                this.emojiOpacity = 100;
+                this.showBrushLayer = true;
+                this.showEmojiLayer = true;
+                
+                this.emojis = [];
+                this.selectedEmojiIndex = -1;
+                this.isDragging = false;
+                this.isResizing = false;
+                this.isRotating = false;
+                this.dragStart = { x: 0, y: 0 };
+                
+                this.history = [];
+                this.historyStep = -1;
+                
+                this.initEventListeners();
+                this.initEmojiUI();
+            }
+            
+            initEventListeners() {
+                // ファイルアップロード
+                const uploadArea = document.getElementById('uploadArea');
+                const fileInput = document.getElementById('fileInput');
+                
+                uploadArea.addEventListener('click', () => fileInput.click());
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.add('dragover');
+                });
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.classList.remove('dragover');
+                });
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.loadImage(files[0]);
+                    }
+                });
+                
+                fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.loadImage(e.target.files[0]);
+                    }
+                });
+                
+                // モード切り替え
+                document.getElementById('brushMode').addEventListener('click', () => this.setMode('brush'));
+                document.getElementById('emojiMode').addEventListener('click', () => this.setMode('emoji'));
+                
+                // レイヤー表示切り替え
+                document.getElementById('brushLayerToggle').addEventListener('click', () => this.toggleBrushLayer());
+                document.getElementById('emojiLayerToggle').addEventListener('click', () => this.toggleEmojiLayer());
+                
+                // ブラシコントロール
+                document.getElementById('brushSize').addEventListener('input', (e) => {
+                    this.brushSize = parseInt(e.target.value);
+                    document.getElementById('brushSizeValue').textContent = this.brushSize;
+                    this.updateBrushPreview();
+                });
+                
+                document.getElementById('opacity').addEventListener('input', (e) => {
+                    this.opacity = parseInt(e.target.value);
+                    document.getElementById('opacityValue').textContent = this.opacity;
+                    this.updateBrushPreview();
+                });
+                
+                document.getElementById('noise').addEventListener('input', (e) => {
+                    this.noise = parseInt(e.target.value);
+                    document.getElementById('noiseValue').textContent = this.noise;
+                });
+                
+                document.getElementById('blur').addEventListener('input', (e) => {
+                    this.blur = parseInt(e.target.value);
+                    document.getElementById('blurValue').textContent = this.blur;
+                });
+                
+                // カラーパレット
+                document.querySelectorAll('.color-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.brushColor = btn.dataset.color;
+                        this.updateBrushPreview();
+                    });
+                });
+                
+                // 顔文字コントロール
+                document.querySelectorAll('.emoji-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.selectedEmoji = btn.dataset.emoji;
+                    });
+                });
+                
+                document.getElementById('emojiSize').addEventListener('input', (e) => {
+                    this.emojiSize = parseInt(e.target.value);
+                    document.getElementById('emojiSizeValue').textContent = this.emojiSize;
+                });
+                
+                document.getElementById('emojiOpacity').addEventListener('input', (e) => {
+                    this.emojiOpacity = parseInt(e.target.value);
+                    document.getElementById('emojiOpacityValue').textContent = this.emojiOpacity;
+                });
+                
+                document.getElementById('adaptColorBtn').addEventListener('click', () => this.adaptEmojiColor());
+                document.getElementById('deleteEmojiBtn').addEventListener('click', () => this.deleteSelectedEmoji());
+                
+                // アクションボタン
+                document.getElementById('undoBtn').addEventListener('click', () => this.undo());
+                document.getElementById('clearBrushBtn').addEventListener('click', () => this.clearBrush());
+                document.getElementById('clearEmojiBtn').addEventListener('click', () => this.clearEmoji());
+                document.getElementById('clearPhotoBtn').addEventListener('click', () => this.clearPhoto());
+                document.getElementById('downloadBtn').addEventListener('click', () => this.download());
+                
+                // キャンバスイベント
+                this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseup', () => this.handleMouseUp());
+                this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+                this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+                this.canvas.addEventListener('touchend', () => this.handleTouchEnd());
+                
+                // キーボードショートカット
+                document.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                        e.preventDefault();
+                        this.undo();
+                    }
+                });
+                
+                this.updateBrushPreview();
+            }
+            
+            loadImage(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        this.originalImage = img;
+                        this.setupCanvas();
+                        this.saveState();
+                        document.getElementById('canvas-container').style.display = 'block';
+                        document.getElementById('controls').style.display = 'block';
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            setupCanvas() {
+                const maxWidth = 800;
+                const maxHeight = 600;
+                let { width, height } = this.originalImage;
+                
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width *= ratio;
+                    height *= ratio;
+                }
+                
+                this.canvas.width = width;
+                this.canvas.height = height;
+                this.brushCanvas.width = width;
+                this.brushCanvas.height = height;
+                this.emojiCanvas.width = width;
+                this.emojiCanvas.height = height;
+                
+                this.redraw();
+            }
+            
+            redraw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // 元画像を描画
+                this.ctx.drawImage(this.originalImage, 0, 0, this.canvas.width, this.canvas.height);
+                
+                // ブラシレイヤーを描画
+                if (this.showBrushLayer) {
+                    this.ctx.drawImage(this.brushCanvas, 0, 0);
+                }
+                
+                // 顔文字レイヤーを描画
+                if (this.showEmojiLayer) {
+                    this.drawEmojis();
+                }
+                
+                // 署名を描画
+                this.drawSignature();
+            }
+            
+            drawSignature() {
+                this.ctx.save();
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                this.ctx.font = '6px Arial';
+                this.ctx.textAlign = 'right';
+                this.ctx.textBaseline = 'bottom';
+                this.ctx.fillText('SnapStranger', 
+                    this.canvas.width - 10, this.canvas.height - 10);
+                this.ctx.restore();
+            }
+            
+            drawEmojis() {
+                this.emojis.forEach((emoji, index) => {
+                    this.ctx.save();
+                    this.ctx.globalAlpha = emoji.opacity / 100;
+                    this.ctx.translate(emoji.x, emoji.y);
+                    this.ctx.rotate(emoji.rotation);
+                    
+                    // 顔の円を描画
+                    this.ctx.fillStyle = emoji.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, emoji.size / 2, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // 目と口を描画
+                    this.ctx.fillStyle = '#000000';
+                    const eyeSize = emoji.size * 0.08;
+                    const eyeOffset = emoji.size * 0.15;
+                    const mouthWidth = emoji.size * 0.3;
+                    const mouthHeight = emoji.size * 0.05;
+                    const mouthY = emoji.size * 0.1;
+                    
+                    // 左目
+                    this.ctx.beginPath();
+                    this.ctx.arc(-eyeOffset, -eyeOffset, eyeSize, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // 右目
+                    this.ctx.beginPath();
+                    this.ctx.arc(eyeOffset, -eyeOffset, eyeSize, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // 口（表情に応じて変更）
+                    if (emoji.text === '😊') {
+                        // 笑顔 - 弧を描く
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, mouthY * 0.5, mouthWidth / 2, 0, Math.PI);
+                        this.ctx.lineWidth = mouthHeight;
+                        this.ctx.stroke();
+                    } else if (emoji.text === '😢') {
+                        // 悲しい顔 - 逆弧を描く
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, mouthY * 1.5, mouthWidth / 2, Math.PI, 0);
+                        this.ctx.lineWidth = mouthHeight;
+                        this.ctx.stroke();
+                    } else if (emoji.text === '😮') {
+                        // 驚いた顔 - 小さい円
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, mouthY, mouthWidth / 4, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    } else {
+                        // 無表情 - 直線
+                        this.ctx.fillRect(-mouthWidth / 2, mouthY - mouthHeight / 2, mouthWidth, mouthHeight);
+                    }
+                    
+                    this.ctx.restore();
+                    
+                    // 選択されている顔文字のハンドルを描画
+                    if (index === this.selectedEmojiIndex) {
+                        this.drawEmojiHandles(emoji);
+                    }
+                });
+            }
+            
+            drawEmojiHandles(emoji) {
+                const handleSize = 8;
+                const distance = emoji.size / 2 + 10;
+                
+                this.ctx.save();
+                this.ctx.translate(emoji.x, emoji.y);
+                this.ctx.rotate(emoji.rotation);
+                
+                // リサイズハンドル（緑）
+                this.ctx.fillStyle = '#28a745';
+                this.ctx.fillRect(distance - handleSize/2, distance - handleSize/2, handleSize, handleSize);
+                
+                // 回転ハンドル（オレンジ）
+                this.ctx.fillStyle = '#ffc107';
+                this.ctx.fillRect(distance - handleSize/2, -distance - handleSize/2, handleSize, handleSize);
+                
+                // 削除ハンドル（赤）
+                this.ctx.fillStyle = '#dc3545';
+                this.ctx.fillRect(-distance - handleSize/2, -distance - handleSize/2, handleSize, handleSize);
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '6px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('×', -distance, -distance);
+                
+                this.ctx.restore();
+            }
+            
+            setMode(mode) {
+                this.currentMode = mode;
+                document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(mode + 'Mode').classList.add('active');
+                
+                if (mode === 'brush') {
+                    document.getElementById('brushControls').style.display = 'block';
+                    document.getElementById('emojiControls').style.display = 'none';
+                    this.canvas.style.cursor = 'crosshair';
+                } else {
+                    document.getElementById('brushControls').style.display = 'none';
+                    document.getElementById('emojiControls').style.display = 'block';
+                    this.canvas.style.cursor = 'copy';
+                }
+                
+                this.selectedEmojiIndex = -1;
+                this.redraw();
+            }
+            
+            toggleBrushLayer() {
+                this.showBrushLayer = !this.showBrushLayer;
+                const btn = document.getElementById('brushLayerToggle');
+                if (this.showBrushLayer) {
+                    btn.classList.add('active');
+                    btn.textContent = 'ブラシレイヤー表示';
+                } else {
+                    btn.classList.remove('active');
+                    btn.textContent = 'ブラシレイヤー非表示';
+                }
+                this.redraw();
+            }
+            
+            toggleEmojiLayer() {
+                this.showEmojiLayer = !this.showEmojiLayer;
+                const btn = document.getElementById('emojiLayerToggle');
+                if (this.showEmojiLayer) {
+                    btn.classList.add('active');
+                    btn.textContent = '顔文字レイヤー表示';
+                } else {
+                    btn.classList.remove('active');
+                    btn.textContent = '顔文字レイヤー非表示';
+                }
+                this.redraw();
+            }
+            
+            updateBrushPreview() {
+                const preview = document.getElementById('brushPreview');
+                const size = Math.min(this.brushSize, 50);
+                preview.style.width = size + 'px';
+                preview.style.height = size + 'px';
+                preview.style.backgroundColor = this.brushColor;
+                preview.style.opacity = this.opacity / 100;
+            }
+            
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                return {
+                    x: (e.clientX - rect.left) * scaleX,
+                    y: (e.clientY - rect.top) * scaleY
+                };
+            }
+            
+            getTouchPos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                return {
+                    x: (e.touches[0].clientX - rect.left) * scaleX,
+                    y: (e.touches[0].clientY - rect.top) * scaleY
+                };
+            }
+            
+            handleMouseDown(e) {
+                const pos = this.getMousePos(e);
+                
+                if (this.currentMode === 'brush') {
+                    this.isDrawing = true;
+                    this.draw(pos.x, pos.y);
+                } else if (this.currentMode === 'emoji') {
+                    this.handleEmojiInteraction(pos.x, pos.y, e);
+                }
+            }
+            
+            handleMouseMove(e) {
+                const pos = this.getMousePos(e);
+                
+                if (this.currentMode === 'brush' && this.isDrawing) {
+                    this.draw(pos.x, pos.y);
+                } else if (this.currentMode === 'emoji') {
+                    this.handleEmojiDrag(pos.x, pos.y);
+                }
+            }
+            
+            handleMouseUp() {
+                if (this.isDrawing) {
+                    this.isDrawing = false;
+                    this.saveState();
+                }
+                this.isDragging = false;
+                this.isResizing = false;
+                this.isRotating = false;
+                
+                // カーソルを元のモードに戻す
+                if (this.currentMode === 'brush') {
+                    this.canvas.style.cursor = 'crosshair';
+                } else {
+                    this.canvas.style.cursor = 'copy';
+                }
+            }
+            
+            handleTouchStart(e) {
+                e.preventDefault();
+                const pos = this.getTouchPos(e);
+                
+                if (this.currentMode === 'brush') {
+                    this.isDrawing = true;
+                    this.draw(pos.x, pos.y);
+                } else if (this.currentMode === 'emoji') {
+                    this.handleEmojiInteraction(pos.x, pos.y, e);
+                }
+            }
+            
+            handleTouchMove(e) {
+                e.preventDefault();
+                const pos = this.getTouchPos(e);
+                
+                if (this.currentMode === 'brush' && this.isDrawing) {
+                    this.draw(pos.x, pos.y);
+                } else if (this.currentMode === 'emoji') {
+                    this.handleEmojiDrag(pos.x, pos.y);
+                }
+            }
+            
+            handleTouchEnd() {
+                if (this.isDrawing) {
+                    this.isDrawing = false;
+                    this.saveState();
+                }
+                this.isDragging = false;
+                this.isResizing = false;
+                this.isRotating = false;
+                
+                // カーソルを元のモードに戻す
+                if (this.currentMode === 'brush') {
+                    this.canvas.style.cursor = 'crosshair';
+                } else {
+                    this.canvas.style.cursor = 'copy';
+                }
+            }
+            
+            draw(x, y) {
+                this.brushCtx.save();
+                this.brushCtx.globalAlpha = this.opacity / 100;
+                this.brushCtx.fillStyle = this.brushColor;
+                
+                if (this.blur > 0) {
+                    this.brushCtx.filter = `blur(${this.blur}px)`;
+                }
+                
+                let size = this.brushSize;
+                if (this.noise > 0) {
+                    size += (Math.random() - 0.5) * (this.noise / 100) * this.brushSize;
+                }
+                
+                this.brushCtx.beginPath();
+                this.brushCtx.arc(x, y, size / 2, 0, Math.PI * 2);
+                this.brushCtx.fill();
+                this.brushCtx.restore();
+                
+                this.redraw();
+            }
+            
+            handleEmojiInteraction(x, y, e) {
+                // ハンドルのクリック判定
+                if (this.selectedEmojiIndex >= 0) {
+                    const emoji = this.emojis[this.selectedEmojiIndex];
+                    const handleSize = 8;
+                    const distance = emoji.size / 2 + 10;
+                    
+                    // 座標変換
+                    const dx = x - emoji.x;
+                    const dy = y - emoji.y;
+                    const cos = Math.cos(-emoji.rotation);
+                    const sin = Math.sin(-emoji.rotation);
+                    const rotatedX = dx * cos - dy * sin;
+                    const rotatedY = dx * sin + dy * cos;
+                    
+                    // 削除ハンドル
+                    if (Math.abs(rotatedX + distance) < handleSize && Math.abs(rotatedY + distance) < handleSize) {
+                        this.emojis.splice(this.selectedEmojiIndex, 1);
+                        this.selectedEmojiIndex = -1;
+                        this.redraw();
+                        this.saveState();
+                        return;
+                    }
+                    
+                    // リサイズハンドル
+                    if (Math.abs(rotatedX - distance) < handleSize && Math.abs(rotatedY - distance) < handleSize) {
+                        this.isResizing = true;
+                        this.canvas.style.cursor = 'se-resize';
+                        this.dragStart = { x, y };
+                        return;
+                    }
+                    
+                    // 回転ハンドル
+                    if (Math.abs(rotatedX - distance) < handleSize && Math.abs(rotatedY + distance) < handleSize) {
+                        this.isRotating = true;
+                        this.canvas.style.cursor = 'grab';
+                        this.dragStart = { x, y };
+                        return;
+                    }
+                }
+                
+                // 顔文字の選択判定
+                for (let i = this.emojis.length - 1; i >= 0; i--) {
+                    const emoji = this.emojis[i];
+                    const distance = Math.sqrt((x - emoji.x) ** 2 + (y - emoji.y) ** 2);
+                    if (distance < emoji.size / 2) {
+                        this.selectedEmojiIndex = i;
+                        this.isDragging = true;
+                        this.canvas.style.cursor = 'move';
+                        this.dragStart = { x: x - emoji.x, y: y - emoji.y };
+                        
+                        // 選択した顔文字の種類をUIに反映
+                        this.selectedEmoji = emoji.text;
+                        this.updateEmojiUISelection();
+                        
+                        this.redraw();
+                        return;
+                    }
+                }
+                
+                // 新しい顔文字を追加
+                this.selectedEmojiIndex = -1;
+                const newEmoji = {
+                    text: this.selectedEmoji,
+                    x: x,
+                    y: y,
+                    size: this.emojiSize,
+                    opacity: this.emojiOpacity,
+                    rotation: 0,
+                    color: '#ffdd44'
+                };
+                this.emojis.push(newEmoji);
+                this.selectedEmojiIndex = this.emojis.length - 1;
+                this.redraw();
+                this.saveState();
+            }
+            
+            handleEmojiDrag(x, y) {
+                if (this.selectedEmojiIndex < 0) return;
+                
+                const emoji = this.emojis[this.selectedEmojiIndex];
+                
+                if (this.isDragging) {
+                    emoji.x = x - this.dragStart.x;
+                    emoji.y = y - this.dragStart.y;
+                    this.redraw();
+                } else if (this.isResizing) {
+                    const distance = Math.sqrt((x - emoji.x) ** 2 + (y - emoji.y) ** 2);
+                    emoji.size = Math.max(20, Math.min(100, distance * 2));
+                    this.redraw();
+                } else if (this.isRotating) {
+                    const angle = Math.atan2(y - emoji.y, x - emoji.x);
+                    emoji.rotation = angle;
+                    this.redraw();
+                }
+            }
+            
+            adaptEmojiColor() {
+                if (this.selectedEmojiIndex < 0) {
+                    alert('顔文字を選択してください');
+                    return;
+                }
+                
+                if (!this.originalImage) {
+                    alert('画像が読み込まれていません');
+                    return;
+                }
+                
+                const emoji = this.emojis[this.selectedEmojiIndex];
+                
+                // 元の画像を一時的なキャンバスに描画
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = this.canvas.width;
+                tempCanvas.height = this.canvas.height;
+                tempCtx.drawImage(this.originalImage, 0, 0, tempCanvas.width, tempCanvas.height);
+                
+                // 顔文字の周辺領域をより広くサンプリング
+                const sampleRadius = Math.max(emoji.size, 30); // 最小30px、顔文字サイズ以上
+                const sampleSize = sampleRadius * 2;
+                
+                // 境界チェック
+                const startX = Math.max(0, emoji.x - sampleRadius);
+                const startY = Math.max(0, emoji.y - sampleRadius);
+                const endX = Math.min(tempCanvas.width, emoji.x + sampleRadius);
+                const endY = Math.min(tempCanvas.height, emoji.y + sampleRadius);
+                
+                const width = endX - startX;
+                const height = endY - startY;
+                
+                if (width <= 0 || height <= 0) {
+                    alert('サンプリング領域が無効です');
+                    return;
+                }
+                
+                // 元の画像から色データを取得
+                const imageData = tempCtx.getImageData(startX, startY, width, height);
+                const data = imageData.data;
+                
+                let r = 0, g = 0, b = 0, count = 0;
+                
+                // 顔文字の中心部分を除外してサンプリング
+                const centerX = emoji.x - startX;
+                const centerY = emoji.y - startY;
+                const excludeRadius = emoji.size / 2;
+                
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        // 顔文字の中心部分をスキップ
+                        const distanceFromCenter = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+                        if (distanceFromCenter < excludeRadius) {
+                            continue;
+                        }
+                        
+                        const index = (y * width + x) * 4;
+                        const alpha = data[index + 3];
+                        
+                        // 透明でないピクセルのみを計算に含める
+                        if (alpha > 0) {
+                            r += data[index];
+                            g += data[index + 1];
+                            b += data[index + 2];
+                            count++;
+                        }
+                    }
+                }
+                
+                if (count === 0) {
+                    alert('周辺色を検出できませんでした');
+                    return;
+                }
+                
+                // 平均色を計算
+                r = Math.floor(r / count);
+                g = Math.floor(g / count);
+                b = Math.floor(b / count);
+                
+                // 周辺色60% + 黄色40%で混合
+                const defaultYellow = { r: 255, g: 255, b: 0 };
+                const ambientRatio = 0.6; // 周辺色の比率
+                const yellowRatio = 0.4;  // 黄色の比率
+                
+                const finalR = Math.floor(r * ambientRatio + defaultYellow.r * yellowRatio);
+                const finalG = Math.floor(g * ambientRatio + defaultYellow.g * yellowRatio);
+                const finalB = Math.floor(b * ambientRatio + defaultYellow.b * yellowRatio);
+                
+                // 顔文字の色を更新
+                emoji.color = `rgb(${finalR}, ${finalG}, ${finalB})`;
+                this.redraw();
+                this.saveState();
+                alert(`顔文字の色を周辺色に合わせました (周辺色60% + 黄色40%: RGB ${finalR}, ${finalG}, ${finalB})`);
+            }
+            
+            saveState() {
+                this.historyStep++;
+                if (this.historyStep < this.history.length) {
+                    this.history.length = this.historyStep;
+                }
+                
+                const state = {
+                    brushData: this.brushCtx.getImageData(0, 0, this.brushCanvas.width, this.brushCanvas.height),
+                    emojis: JSON.parse(JSON.stringify(this.emojis))
+                };
+                this.history.push(state);
+                
+                if (this.history.length > 50) {
+                    this.history.shift();
+                    this.historyStep--;
+                }
+            }
+            
+            undo() {
+                if (this.historyStep > 0) {
+                    this.historyStep--;
+                    const state = this.history[this.historyStep];
+                    this.brushCtx.putImageData(state.brushData, 0, 0);
+                    this.emojis = JSON.parse(JSON.stringify(state.emojis));
+                    this.selectedEmojiIndex = -1;
+                    this.redraw();
+                }
+            }
+            
+            clearBrush() {
+                this.brushCtx.clearRect(0, 0, this.brushCanvas.width, this.brushCanvas.height);
+                this.redraw();
+                this.saveState();
+            }
+            
+            clearEmoji() {
+                this.emojis = [];
+                this.selectedEmojiIndex = -1;
+                this.redraw();
+                this.saveState();
+            }
+            
+            clearPhoto() {
+                this.originalImage = null;
+                this.emojis = [];
+                this.selectedEmojiIndex = -1;
+                this.history = [];
+                this.historyStep = -1;
+                this.brushCtx.clearRect(0, 0, this.brushCanvas.width, this.brushCanvas.height);
+                document.getElementById('canvas-container').style.display = 'none';
+                document.getElementById('controls').style.display = 'none';
+            }
+            
+            download() {
+                const downloadCanvas = document.createElement('canvas');
+                const downloadCtx = downloadCanvas.getContext('2d');
+                downloadCtx.imageSmoothingEnabled = false;
+                
+                downloadCanvas.width = this.originalImage.width;
+                downloadCanvas.height = this.originalImage.height;
+                
+                // 元画像を描画
+                downloadCtx.drawImage(this.originalImage, 0, 0);
+                
+                // ブラシレイヤーを描画
+                if (this.showBrushLayer) {
+                    const scaleX = this.originalImage.width / this.canvas.width;
+                    const scaleY = this.originalImage.height / this.canvas.height;
+                    downloadCtx.drawImage(this.brushCanvas, 0, 0, 
+                        this.originalImage.width, this.originalImage.height);
+                }
+                
+                // 顔文字レイヤーを描画
+                if (this.showEmojiLayer) {
+                    const scaleX = this.originalImage.width / this.canvas.width;
+                    const scaleY = this.originalImage.height / this.canvas.height;
+                    
+                    this.emojis.forEach(emoji => {
+                        downloadCtx.save();
+                        downloadCtx.globalAlpha = emoji.opacity / 100;
+                        downloadCtx.translate(emoji.x * scaleX, emoji.y * scaleY);
+                        downloadCtx.rotate(emoji.rotation);
+                        
+                        const scaledSize = emoji.size * scaleX;
+                        
+                        // 顔の円を描画
+                        downloadCtx.fillStyle = emoji.color;
+                        downloadCtx.beginPath();
+                        downloadCtx.arc(0, 0, scaledSize / 2, 0, Math.PI * 2);
+                        downloadCtx.fill();
+                        
+                        // 目と口を描画
+                        downloadCtx.fillStyle = '#000000';
+                        const eyeSize = scaledSize * 0.08;
+                        const eyeOffset = scaledSize * 0.15;
+                        const mouthWidth = scaledSize * 0.3;
+                        const mouthHeight = scaledSize * 0.05;
+                        const mouthY = scaledSize * 0.1;
+                        
+                        // 左目
+                        downloadCtx.beginPath();
+                        downloadCtx.arc(-eyeOffset, -eyeOffset, eyeSize, 0, Math.PI * 2);
+                        downloadCtx.fill();
+                        
+                        // 右目
+                        downloadCtx.beginPath();
+                        downloadCtx.arc(eyeOffset, -eyeOffset, eyeSize, 0, Math.PI * 2);
+                        downloadCtx.fill();
+                        
+                        // 口（表情に応じて変更）
+                        if (emoji.text === '😊') {
+                            // 笑顔 - 弧を描く
+                            downloadCtx.beginPath();
+                            downloadCtx.arc(0, mouthY * 0.5, mouthWidth / 2, 0, Math.PI);
+                            downloadCtx.lineWidth = mouthHeight;
+                            downloadCtx.stroke();
+                        } else if (emoji.text === '😢') {
+                            // 悲しい顔 - 逆弧を描く
+                            downloadCtx.beginPath();
+                            downloadCtx.arc(0, mouthY * 1.5, mouthWidth / 2, Math.PI, 0);
+                            downloadCtx.lineWidth = mouthHeight;
+                            downloadCtx.stroke();
+                        } else if (emoji.text === '😮') {
+                            // 驚いた顔 - 小さい円
+                            downloadCtx.beginPath();
+                            downloadCtx.arc(0, mouthY, mouthWidth / 4, 0, Math.PI * 2);
+                            downloadCtx.fill();
+                        } else {
+                            // 無表情 - 直線
+                            downloadCtx.fillRect(-mouthWidth / 2, mouthY - mouthHeight / 2, mouthWidth, mouthHeight);
+                        }
+                        
+                        downloadCtx.restore();
+                    });
+                }
+                
+                // 署名を描画
+                downloadCtx.save();
+                downloadCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                downloadCtx.font = `${Math.max(6, downloadCanvas.width / 100)}px Arial`;
+                downloadCtx.textAlign = 'right';
+                downloadCtx.textBaseline = 'bottom';
+                downloadCtx.fillText('SnapStranger', 
+                    downloadCanvas.width - 20, downloadCanvas.height - 20);
+                downloadCtx.restore();
+                
+                // ダウンロード
+                downloadCanvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `masked-photo-${Date.now()}.jpg`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }, 'image/jpeg', 1.0);
+            }
+            
+            initEmojiUI() {
+                // 顔文字選択UIのキャンバスに実際の顔文字を描画
+                const emojiButtons = document.querySelectorAll('.emoji-btn canvas');
+                emojiButtons.forEach((canvas, index) => {
+                    const ctx = canvas.getContext('2d');
+                    const type = canvas.getAttribute('data-type');
+                    this.drawEmojiPreview(ctx, type, 15, 15, 12, '#ffdd44');
+                });
+                
+                // 顔文字選択ボタンのイベントリスナーを設定
+                document.querySelectorAll('.emoji-btn').forEach((btn, index) => {
+                    btn.addEventListener('click', () => {
+                        const emoji = btn.getAttribute('data-emoji');
+                        this.selectedEmoji = emoji;
+                        this.updateEmojiUISelection();
+                    });
+                });
+            }
+            
+            drawEmojiPreview(ctx, type, x, y, size, color) {
+                ctx.save();
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                
+                // 顔の円を描画
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 目を描画
+                ctx.fillStyle = '#000000';
+                const eyeSize = size * 0.15;
+                const eyeOffset = size * 0.3;
+                ctx.beginPath();
+                ctx.arc(x - eyeOffset, y - eyeOffset * 0.5, eyeSize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + eyeOffset, y - eyeOffset * 0.5, eyeSize, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 口を描画
+                const mouthY = y + size * 0.3;
+                const mouthWidth = size * 0.6;
+                const mouthHeight = size * 0.1;
+                
+                if (type === 'smile') {
+                    // 笑顔 - 弧を描く
+                    ctx.beginPath();
+                    ctx.arc(x, mouthY - size * 0.2, mouthWidth / 2, 0, Math.PI);
+                    ctx.lineWidth = mouthHeight;
+                    ctx.stroke();
+                } else if (type === 'sad') {
+                    // 悲しい顔 - 逆弧を描く
+                    ctx.beginPath();
+                    ctx.arc(x, mouthY + size * 0.2, mouthWidth / 2, Math.PI, 0);
+                    ctx.lineWidth = mouthHeight;
+                    ctx.stroke();
+                } else if (type === 'surprised') {
+                    // 驚いた顔 - 小さい円
+                    ctx.beginPath();
+                    ctx.arc(x, mouthY, mouthWidth / 4, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // 無表情 - 直線
+                    ctx.fillRect(x - mouthWidth / 2, mouthY - mouthHeight / 2, mouthWidth, mouthHeight);
+                }
+                
+                ctx.restore();
+            }
+            
+            updateEmojiUISelection() {
+                // 顔文字選択ボタンの状態を更新
+                document.querySelectorAll('.emoji-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.getAttribute('data-emoji') === this.selectedEmoji) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+            
+            deleteSelectedEmoji() {
+                if (this.selectedEmojiIndex >= 0) {
+                    this.emojis.splice(this.selectedEmojiIndex, 1);
+                    this.selectedEmojiIndex = -1;
+                    this.redraw();
+                    this.saveState();
+                } else {
+                    alert('削除する顔文字を選択してください');
+                }
+            }
+        }
+        
+        // アプリケーション初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            new PhotoMaskingApp();
+        });
+    </script>
+</body>
+</html>
+
